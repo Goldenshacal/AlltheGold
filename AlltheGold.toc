@@ -26,6 +26,6 @@ libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
 embeds.xml
 
 AlltheGold-enUS.lua
-Config.lua
+Config.lua 
 
 AlltheGold.lua
