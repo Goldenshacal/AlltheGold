@@ -1,4 +1,4 @@
-local atg_display_name, atg = ...
+local ATG_display_name, ATG = ...
 
 -- Config.lua
 -- $Id$
@@ -41,7 +41,7 @@ local honor_horde_icon			= '\124TInterface\\Icons\\PVPCurrency-Honor-Horde:0:0:2
 local conquest_alliance_icon	= '\124TInterface\\Icons\\PVPCurrency-Conquest-Alliance:0:0:2:0:64:64\124t'
 local conquest_horde_icon		= '\124TInterface\\Icons\\PVPCurrency-Conquest-Horde:0:0:2:0:64:64\124t'
 local kill_icon					= '\124TInterface\\Icons\\Spell_Holy_BlessingOfStrength:0:0:2:0:64:64\124t'
-local atg_icon						= '\124TInterface\\Icons\\INV_Misc_PocketWatch_02:0:0\124t'
+local ATG_icon						= '\124TInterface\\Icons\\INV_Misc_PocketWatch_02:0:0\124t'
 
 -- Version iditification management
 do
@@ -61,9 +61,9 @@ do
 			end
 
 			-- Find the curent version
-			local version = _G.GetAddOnMetadata("AlltheGold", "Version"):match("([^ ]+)")
+			local version = _G.C_AddOns.GetAddOnMetadata("AlltheGold", "Version"):match("([^ ]+)")
 
-			version_string = (L["Version %s (r%s)"]):format(version, revision)
+		--	version_string = (L["Version %s (r%s)"]):format(version, revision)
 		end
 
 		return version_string
@@ -106,7 +106,7 @@ local function ReturnConfigMenu()
 					checked = 'show_played_time';
 				},
 				[4] = {
-					text = L["Show Last Login"];
+					text = L["Show Last Loggin"];
 					tooltipText = L["Display the elapsed time since the character was last logged in"];
 					checked = 'show_last_login';
 				},
@@ -369,7 +369,7 @@ local function ReturnConfigMenu()
 			text = L["Configuration"];
 			tooltipText = L["Open configuration dialog"];
 			tooltipOnButton = 1;
-			func = function() _G.InterfaceOptionsFrame_OpenToCategory(atg_display_name); _G.InterfaceOptionsFrame_OpenToCategory(atg_display_name) end;
+			func = function() _G.InterfaceOptionsFrame_OpenToCategory(ATG_display_name); _G.InterfaceOptionsFrame_OpenToCategory(ATG_display_name) end;
 		},
 	}
 
@@ -438,7 +438,7 @@ local function ReturnConfigMenu()
 
 	-- Build the ignored list
 	local i = 1
-	for faction, faction_table in pairs(atg.db.global.data) do
+	for faction, faction_table in pairs(ATG.db.global.data) do
 		for realm, realm_table in pairs(faction_table) do
 			for pc, _ in pairs(realm_table) do
 				local pc_name = (L["%s : %s"]):format(realm, pc)
@@ -467,7 +467,7 @@ local function ReturnConfigMenu()
 end
 
 do
-	local dropdownFrame = _G.CreateFrame("Frame", "AlltheGoldDropdownMenu", nil, "Lib_UIDropDownMenuTemplate")
+	local dropdownFrame = _G.CreateFrame("Frame", "AlltheGoldDropdownMenu", nil, "UIDropDownMenuTemplate")
 
 	function DisplayConfigMenu(anchorFrame)
 		local anchor
@@ -477,14 +477,14 @@ do
 			anchor = "cursor"
 		end
 
-		_G.Lib_EasyMenu(atg.config_menu, dropdownFrame, anchor, nil, nil, "MENU")
+		_G.EasyMenu(ATG.config_menu, dropdownFrame, anchor, nil, nil, "MENU")
 	end
 end -- do
 
 -- Option management
 local function GetOptions()
 	local options = {
-		name = atg_icon .. " " .. atg_display_name,
+		name = ATG_icon .. " " .. ATG_display_name,
 		childGroups = "tab",
 		type = "group",
 		order = 1,
@@ -643,7 +643,7 @@ local function GetOptions()
 						  order     = 3.1,
 					},
 					show_last_login = {
-					 	  name      = L["Show Last Login"],
+					 	  name      = L["Show Last Loggin"],
 					 	  desc      = L["Display the elapsed time since the character was last logged in"],
 					 	  type      = 'toggle',
 					 	  get       = function() return AlltheGold:GetOption('show_last_login') end,
@@ -703,7 +703,7 @@ local function GetOptions()
 						 set       	 = function(info, v) AlltheGold:SetOption('show_rested_xp_countdown',v) end,
 						 order 		 = 5.4,
 					},
-					percent_rest = {
+					 percent_rest = {
 						 name        = L["Percent Rest"],
 						 desc        = L["Set the base for % display of rested XP"],
 						 type        = 'select',
@@ -836,7 +836,7 @@ local function GetOptions()
 						desc      = L["Scale the tooltip (70% to 150%)"],
 						width		= "full",
 						type      = 'range',
-						min		  = .5,
+						min		  = .7,
 						max       = 1.5,
 						step      = .05,
 						isPercent = true,
@@ -903,7 +903,7 @@ local function GetOptions()
 
 	-- Ignore section
 	local faction_order = 1
-	for faction, faction_table in pairs(atg.db.global.data) do
+	for faction, faction_table in pairs(ATG.db.global.data) do
 		local faction_id = "faction" .. faction_order
 		options.args.ignore.args[faction_id] = {
 				type 	= 'group',
@@ -941,7 +941,7 @@ local function GetOptions()
 
 	-- Delete section
 	faction_order = 1
-	for faction, faction_table in pairs(atg.db.global.data) do
+	for faction, faction_table in pairs(ATG.db.global.data) do
 		local faction_id = "faction" .. faction_order
 		options.args.delete.args[faction_id] = {
 				type 	= 'group',
@@ -984,7 +984,7 @@ local function GetOptions()
 								-- Erase the character data
 								realm_table[pc] = nil
 								if not next(realm_table) then faction_table[realm] = nil end
-								if not next(faction_table) then atg.db.global.data[faction] = nil end
+								if not next(faction_table) then ATG.db.global.data[faction] = nil end
 								
 								-- Force addon refresh
 								AlltheGold.sort_tables_done = nil
@@ -1004,7 +1004,7 @@ local function GetOptions()
 	end
 
 	-- Profile section
-	options.args.profiles = LibStub("AceDBOptions-3.0"):GetOptionsTable(atg.db)
+	options.args.profiles = LibStub("AceDBOptions-3.0"):GetOptionsTable(ATG.db)
 
 	return options
 
@@ -1031,19 +1031,19 @@ local function InitConfig()
 	AlltheGold = _G.AlltheGold
 
 	-- Initialize config menu
-	atg.config_menu = ReturnConfigMenu()
+	ATG.config_menu = ReturnConfigMenu()
 
 	-- Initialized options panel
-	LibStub("AceConfig-3.0"):RegisterOptionsTable(atg_display_name, GetOptions())
-	atg.options_frame = LibStub("AceConfigDialog-3.0"):AddToBlizOptions(atg_display_name)
+	LibStub("AceConfig-3.0"):RegisterOptionsTable(ATG_display_name, GetOptions())
+	ATG.options_frame = LibStub("AceConfigDialog-3.0"):AddToBlizOptions(ATG_display_name)
 
 	-- About section
 	if LibStub:GetLibrary("LibAboutPanel", true) then
-		LibStub:GetLibrary("LibAboutPanel").new(atg_display_name, atg_display_name)
+		LibStub:GetLibrary("LibAboutPanel").new(ATG_display_name, ATG_display_name)
 	end
 end
 
 -- Functions used outside of Config.lua
-atg.DisplayConfigMenu 		= DisplayConfigMenu
-atg.GetVersionString 			= GetVersionString
-atg.InitConfig					= InitConfig
+ATG.DisplayConfigMenu 		= DisplayConfigMenu
+ATG.GetVersionString 			= GetVersionString
+ATG.InitConfig					= InitConfig

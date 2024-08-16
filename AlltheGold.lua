@@ -1,4 +1,4 @@
-local ATG_display_name, AP = ...
+local ATG_display_name, ATG = ...
 
 -- AlltheGold.lua
 -- $Id$
@@ -38,13 +38,15 @@ local LibStub = _G.LibStub
 if not _G.AlltheGold_revision then _G.AlltheGold_revision = {} end
 local AlltheGold_revision = _G.AlltheGold_revision
 AlltheGold_revision.main	= ("$Revision$"):match("(%d+)")
-AlltheGold_revision.toc  = _G.GetAddOnMetadata(ATG_display_name, "Version"):match("%$Revision:%s(%d+)")
+AlltheGold_revision.toc  = _G.C_AddOns.GetAddOnMetadata(ATG_display_name, "Version"):match("%$Revision:%s(%d+)")
 
 -- Backward and forward compatilility when playing Cataclysm
-local GetHonorCurrency		= _G.GetHonorCurrency or function() return select(2,_G.GetCurrencyInfo(392)) or 0 end
-local GetConquestCurrency	= _G.GetConquestCurrency or function() return ( _G.GetCurrencyInfo and select(2,_G.GetCurrencyInfo(390)) ) or 0 end
-local GetJusticeCurrency	= _G.GetJusticeCurrency or function() return ( _G.GetCurrencyInfo and select(2,_G.GetCurrencyInfo(395)) ) or 0 end
-local GetValorCurrency		= _G.GetValorCurrency or function() return ( _G.GetCurrencyInfo and select(2,_G.GetCurrencyInfo(396)) ) or 0 end
+local GetHonorCurrency = _G.GetHonorCurrency or function() return select(2,C_CurrencyInfo.GetCurrencyInfo(392)) or 0 end
+
+local GetConquestCurrency = _G.GetConquestCurrency or function() return ( C_CurrencyInfo.GetCurrencyInfo and select(2,C_CurrencyInfo.GetCurrencyInfo(390)) ) or 0 end
+
+local GetJusticeCurrency = _G.GetJusticeCurrency or function() return ( C_CurrencyInfo.GetCurrencyInfo and select(2,C_CurrencyInfo.GetCurrencyInfo(395)) ) or 0 end
+local GetValorCurrency = _G.GetValorCurrency or function() return ( C_CurrencyInfo.GetCurrencyInfo and select(2,C_CurrencyInfo.GetCurrencyInfo(396)) ) or 0 end
 
 -- Define static values for the addon
 -- Ten days in second, needed to estimate the rested XP
@@ -79,7 +81,7 @@ local AlltheGold = LibStub("AceAddon-3.0"):NewAddon("AlltheGold", "AceEvent-3.0"
 _G[ATG_display_name] = AlltheGold
 
 -- Print function
-local myfullname = _G.GetAddOnMetadata(ATG_display_name, "Title")
+local myfullname = _G.C_AddOns.GetAddOnMetadata(ATG_display_name, "Title")
 local default_channel = nil
 local function setDefaultChanelForPrint()
 	default_channel = nil
@@ -234,7 +236,6 @@ local default_options = {
 				}
 			}
 		},
-		--
 		cache = {
 			XPToNextLevel = {
 				-- Build version
@@ -250,13 +251,13 @@ local default_options = {
 			all_factions               = true,
 			all_realms                 = true,
 			show_coins						= true,
-			show_played_time				= false,
+			show_played_time				= true,
 			show_last_login				= false,
 			show_seconds               = false,
-			show_progress              = false,
+			show_progress              = true,
 			show_rested_xp             = false,
-			percent_rest               = 0,
-			show_rested_xp_countdown   = false,
+			percent_rest               = "100",
+			show_rested_xp_countdown   = true,
 			refresh_rate               = 20,
 			show_class_name            = true,
 			colorize_class             = true,
@@ -264,7 +265,7 @@ local default_options = {
 			show_ilevel						= false,
 			show_location              = "none",
 			show_guild						= false,
-			show_xp_total              = false,
+			show_xp_total              = true,
 			show_lvl_totals				= false,
 			tooltip_scale					= 1,
 			opacity							= .9,
@@ -311,8 +312,8 @@ function AlltheGold:OnInitialize()
 
 	-- Register the command line
 	-- /ATG and /AlltheGold will open the blizard interface panel
-	_G.SLASH_AlltheGold_CONFIG1 = L["/ATG"]
-	_G.SLASH_AlltheGold_CONFIG2 = L["/AlltheGold"]
+--	_G.SLASH_AlltheGold_CONFIG1 = L["/ATG"]
+--	_G.SLASH_AlltheGold_CONFIG2 = L["/allthegold"]
 	_G.SlashCmdList["AlltheGold_CONFIG"] = function()
 		_G.InterfaceOptionsFrame_OpenToCategory(ATG_display_name)
 	end
@@ -358,9 +359,10 @@ function AlltheGold:OnInitialize()
 	self.sort_tables_done    = false
 
 	-- Find the max level
-	self.max_pc_level = _G.MAX_PLAYER_LEVEL_TABLE[min(_G.GetExpansionLevel(),_G.GetAccountExpansionLevel())]
-
+--	self.max_pc_level = _G.MAX_PLAYER_LEVEL_TABLE[min(_G.GetExpansionLevel(),_G.GetAccountExpansionLevel())]
+	self.max_pc_level = GetMaxLevelForLatestExpansion()
 	-- Initialize the cache
+	
 	InitXPToLevelCache()
 end
 
@@ -374,10 +376,8 @@ function AlltheGold:OnEnable()
 	 setDefaultChanelForPrint()
 
 	 -- Configuration initialization
-	-- ATG.db = self.db
-	-- ATG.InitConfig()
-	AP.db = self.db
-	 AP.InitConfig()
+	 ATG.db = self.db
+	 ATG.InitConfig()
 
 	 -- Register the events we need
 	 -- (event unregistering is done automagicaly by ACE)
@@ -395,7 +395,11 @@ function AlltheGold:OnEnable()
 	 self:RegisterEvent("BAG_UPDATE",     					"EventHandlerOnlySort")
 
 	 -- Hook the functions that need hooking
-
+	 --self:Hook("Logout", true)
+	 self:RegisterEvent("PLAYER_LOGOUT", "Logout")
+	 --self:Hook("Quit",   true)
+	 self:RegisterEvent("PLAYER_QUITING", "Quit")
+	 
 	 -- Initialize values that don't change between reloads
 	 self.faction, self.loc_faction	= _G.UnitFactionGroup("player")
 	 self.realm      						= _G.GetRealmName()
@@ -832,7 +836,7 @@ function AlltheGold:DrawTooltip(anchor)
 	tooltip:SmartAnchorTo(self.tooltip_anchor)
 
 	local line, column = tooltip:AddHeader()
-	tooltip:SetCell(line, 1, C:White(L["All the Gold Breakdown"]), "CENTER", nb_columns)
+	tooltip:SetCell(line, 1, C:White(L["AlltheGold"]), "CENTER", nb_columns)
 	tooltip:AddSeparator()
 
 	-- We group by factions, then by realm, then by PC
@@ -851,9 +855,8 @@ function AlltheGold:DrawTooltip(anchor)
 				if ( (self:GetOption('all_realms') or self.realm == realm) and
 					  self.total_realm[faction][realm].time_played ~= 0 ) then
 					----self:Debug("self.total_realm[faction][realm].time_played: ",self.total_realm[faction][realm].time_played)
-
+					
 					-- Build the Realm aggregated line
-					-- Change Color
 					local text_realm = C:Gold(L["%s %s "]):format(realm, faction)
 
 					local text_realm_optional = ""
@@ -1578,6 +1581,19 @@ end
 --[[ ================================================================= ]]--
 
 -- Those are used to get a last update on the time played before going away
+function AlltheGold:Logout()
+	 --self:Debug("Logout()")
+
+	 self:RequestTimePlayed()
+	 --return self.hooks.Logout()
+end
+
+function AlltheGold:Quit()
+	 --self:Debug("Quit()")
+
+	 self:RequestTimePlayed()
+	 --return self.hooks.Quit()
+end
 
 --[[ ================================================================= ]]--
 --[[                       Utility Functions                           ]]--
@@ -1673,22 +1689,22 @@ function FormatXP(xp)
 	return display_xp
 end
 
--- Fonction that format the money string
 -- The result is a string with embeded coin icons
 function FormatMoney(money)
-	local platinstring, goldString, silverString, copperString;
---	local platin = floor(money / (_G..SILVER_PER_GOLD * _G.SILVER_PER_GOLD));
+	local goldString, silverString, copperString;
 	local gold = floor(money / (_G.COPPER_PER_SILVER * _G.SILVER_PER_GOLD));
 	local silver = floor((money - (gold * _G.COPPER_PER_SILVER * _G.SILVER_PER_GOLD)) / _G.COPPER_PER_SILVER);
 	local copper = mod(money, _G.COPPER_PER_SILVER);
 
 	if ( not AlltheGold:GetOption('use_icons') ) then
---		platinString = platin..C:Gold(_G.GOLD_AMOUNT_SYMBOL);
-		goldString = gold..C:Gold(_G.GOLD_AMOUNT_SYMBOL);
+		if gold >= 1000 then
+            goldString = FormatDigitsWithDot(gold) .. C:Gold(_G.GOLD_AMOUNT_SYMBOL)
+        else
+			goldString = gold..C:Gold(_G.GOLD_AMOUNT_SYMBOL);
+		end
 		silverString = silver..C:Silver(_G.SILVER_AMOUNT_SYMBOL);
 		copperString = copper..C:Copper(_G.COPPER_AMOUNT_SYMBOL);
 	else
---		platinString = _G.GOLD_AMOUNT_TEXTURE:format(gold, 25, 25);
 		goldString = _G.GOLD_AMOUNT_TEXTURE:format(gold, 0, 0);
 		silverString = _G.SILVER_AMOUNT_TEXTURE:format(silver, 0, 0);
 		copperString = _G.COPPER_AMOUNT_TEXTURE:format(copper, 0, 0);
@@ -1696,27 +1712,33 @@ function FormatMoney(money)
 
 	local moneyString = "";
 	local separator = "";
---	if ( platin > 0 ) then
---		moneyString = platinString;
---		separator = " ";
---	end
-	--
 	if ( gold > 0 ) then
-		moneyString = moneyString..separator..goldString;
+		moneyString = goldString;
 		separator = " ";
 	end
-	-- Made Silver Tracking useless. Change 99 to 1 to make it work.
 	if ( silver > 99 ) then
 		moneyString = moneyString..separator..silverString;
 		separator = " ";
 	end
-	-- Made Bronze Tracking useless. Change 99 to 1 to make it work.
 	if ( copper > 99 or moneyString == "" ) then
 		moneyString = moneyString..separator..copperString;
 	end
 
 	return moneyString;
 
+end
+
+function FormatDigitsWithDot(number)
+    local formatted = tostring(number)
+    local length = #formatted
+
+    if length > 3 then
+        for i = length - 3, 1, -3 do
+            formatted = string.sub(formatted, 1, i) .. "." .. string.sub(formatted, i + 1)
+        end
+    end
+
+    return formatted
 end
 
 local honor_strings = {
@@ -1783,7 +1805,7 @@ function FormatHonor( faction, honor_kills, honor_points, arena_points, conquest
 		honor_string = honor_string .. (fmt['hp-' .. faction]):format(C:White(tostring(honor_points))) .. '  '
 	end
 	if AlltheGold:GetOption('show_arena_points') and arena_points ~= nil 		then
-		honor_string = honor_string .. fmt.ap:format(C:White(tostring(arena_points))) .. ' '
+		honor_string = honor_string .. fmt.ATG:format(C:White(tostring(arena_points))) .. ' '
 	end
 	if AlltheGold:GetOption('show_conquest_points') and conquest_points ~= nil 		then
 		honor_string = honor_string .. (fmt['cp-' .. faction]):format(C:White(tostring(conquest_points))) .. '  '
@@ -2348,7 +2370,7 @@ function InitXPToLevelCache( game_version, build_version )
 		date, toc_number = select(3, _G.GetBuildInfo())
 	end
 
-	-- Values for the 7.1.0 patch
+	-- Values for the 6.2.0 patch
 	XPToNextLevelCache[10]	= 6700
 	XPToNextLevelCache[11]	= 7000
 	XPToNextLevelCache[12]	= 7700
@@ -2414,11 +2436,17 @@ function InitXPToLevelCache( game_version, build_version )
 	XPToNextLevelCache[72]	= 422000
 	XPToNextLevelCache[73]	= 427000
 	XPToNextLevelCache[74]	= 432000
+	XPToNextLevelCache[74]	= 847000
 	XPToNextLevelCache[75]	= 438000
+	XPToNextLevelCache[75]	= 855000
 	XPToNextLevelCache[76]	= 445000
+	XPToNextLevelCache[76]	= 865000
 	XPToNextLevelCache[77]	= 455000
+	XPToNextLevelCache[77]	= 873000
 	XPToNextLevelCache[78]	= 462000
+	XPToNextLevelCache[78]	= 882000
 	XPToNextLevelCache[79]	= 474000
+	XPToNextLevelCache[79]	= 891000
 	XPToNextLevelCache[80]	= 482000
 	XPToNextLevelCache[81]	= 487000
 	XPToNextLevelCache[82]	= 492000
@@ -2437,19 +2465,9 @@ function InitXPToLevelCache( game_version, build_version )
 	XPToNextLevelCache[95]	= 815100
 	XPToNextLevelCache[96]	= 821600
 	XPToNextLevelCache[97]	= 830700
-	XPToNextLevelCache[98]  = 645000
-	XPToNextLevelCache[99]  = 651000
-	XPToNextLevelCache[100] = 657000
-	XPToNextLevelCache[101] = 663000
-	XPToNextLevelCache[102] = 669000
-	XPToNextLevelCache[103] = 675000
-	XPToNextLevelCache[104] = 681000
-	XPToNextLevelCache[105] = 687000
-	XPToNextLevelCache[106] = 693000
-	XPToNextLevelCache[107] = 699000
-	XPToNextLevelCache[108] = 705000
-	XPToNextLevelCache[109] = 711000
-	XPToNextLevelCache[110] = 717000
+	XPToNextLevelCache[98]	= 838500
+	XPToNextLevelCache[99]	= 846300
+	XPToNextLevelCache[100]	= 854100
 
 	-- Initialize the exceptions that were found by AlltheGold
 	--	XPToNextLevelCache = self.db.global.cache.XPToNextLevel[build_version]
@@ -2609,7 +2627,7 @@ function AlltheGoldLDB:OnClick(button,down)
 
 	-- For tests of EasyMenu
 	if button ==  "RightButton" then
-		AP.DisplayConfigMenu()
+		ATG.DisplayConfigMenu()
 	end
 
 	if AlltheGold.tooltip then

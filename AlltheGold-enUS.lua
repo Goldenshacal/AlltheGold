@@ -8,11 +8,11 @@ AlltheGold_revision.enUS	= ("$Revision$"):match("(%d+)")
 local L = LibStub("AceLocale-3.0"):NewLocale("AlltheGold", "enUS", true)
 
 -- Tablet title
-L["All the Gold Breakdown"]                                			= true
+L["AlltheGold"]                                			= true
 
 -- Menus
 L["AlltheGold Configuration"]													= true
-L["Version %s (r%s)"]															= true
+L["Version %s"]															= true
 L["Display"]                                             			= true
 L["Set the display options"]                             			= true
 L["All Factions"]                                        			= true
@@ -93,8 +93,8 @@ L["100%"]																			= true
 L["150%"]																			= true
 
 -- Strings
-L["v%s - %s (Type /ATG for help)"]                 	       			= true
-L["%s characters "]                               	       			= true
+L["v%s - %s (Type /atg for help)"]                 	       			= true
+L["%s %s "]                               	       			= true
 L["%d rested XP"]                                 	    				= true
 L["rested"]                                       		        		= true
 L["Total %s Time Played: "]                              			= true
@@ -112,8 +112,8 @@ L['%s HP']																			= true
 L['%s AP']																			= true
 
 -- Console commands
-L["/AlltheGold"]                                   	       			= true
-L["/ATG"]                                          	       			= true
+--L["/AlltheGold"]                                   	       			= true
+--L["/atg"]                                          	       			= true
 
 -- New stuff for 30300-2
 L["Filter"]																			= true
@@ -151,7 +151,7 @@ L['%s (%s)']																		= true
 -- <currency type> (<first icon string> or <second icon string>)
 L["%s (%s or %s)"]																= true
 -- <realm> <faction> characters.
-L["%s %s "]															= true
+L["%s %s characters "]															= true
 
 -- New Stuff for 40200-2
 L["Display Delay"]																= true
@@ -189,6 +189,6 @@ L["Show the character guild name"]											= true
 -- New stuff for 60200-3
 L["Logged in"]																		= true
 L["|cff00ffffSeen |cffffffff%s |cff00ffffago|r"]						= true
-L["Show Last Login"]															= true
+L["Show Last Loggin"]															= true
 L["Display the elapsed time since the character was last logged in"]
 																						= true
